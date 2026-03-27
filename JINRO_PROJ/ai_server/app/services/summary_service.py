@@ -13,10 +13,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ─────────────────────────────────────────
 # JSON 스키마 강제 — Pydantic 모델 정의
-# GPT가 반드시 이 구조로 반환
-# → 파싱 실패 없음
-# → career_recommendation 항상 list[str] 보장
-# → 프론트엔드에서 바로 렌더링 가능
 # ─────────────────────────────────────────
 class CounselingResult(BaseModel):
     interest_field:        str
@@ -204,12 +200,7 @@ def refine_chunks(chunks: list) -> str:
 
 # =====================================================================
 # Reduce 단계 — Structured Output 적용
-# ✅ 기존: 프롬프트로 JSON 형식 요청 → GPT가 어길 수 있음
-#          정규식 파싱 + json.loads() + try/except 필요
 # ✅ 변경: Pydantic 스키마로 완전 강제
-#          → 파싱 실패 없음
-#          → career_recommendation 항상 list[str] 보장
-#          → 정규식, json.loads(), try/except 전부 불필요
 # =====================================================================
 def summarize_final(text, video_analyze):
 
@@ -266,8 +257,7 @@ def summarize_final(text, video_analyze):
     for attempt in range(3):
         try:
             # ✅ Structured Output 적용
-            # response_format에 Pydantic 모델을 넣으면
-            # GPT가 반드시 해당 스키마 구조로 반환 보장
+          
             res = client.beta.chat.completions.parse(
                 model="gpt-4o-mini",
                 messages=[
