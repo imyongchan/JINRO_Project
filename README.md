@@ -205,148 +205,7 @@
 - 집중도 40 미만인 경우 `is_reliable=False`로 상태를 표시해 재분석/검증 플로우를 지원.
 
 ---
-# 💥Trouble shooting 
-
-
-### 3. 집중도 모델 개선 - 데이터 불균형 대응
-**[Situation]**
-집중/비집중 라벨 데이터가 불균형하여 모델이 편향 예측을 했습니다.
-
-**[Problem]**
-정확도가 높지만 재현율이 낮은 결과가 나왔습니다.
-
-**[Solution]**
-불균형 데이터를 SMOTE 등으로 오버샘플링하고, 가중치 손실(`CrossEntropyLoss(weight=...)`)을 적용하여 균일 학습을 유도했습니다.
-
-**[Result]**
-집중도 모델의 recall이 0.84에서 0.91로 상승했고, 전체 F1도 0.82에서 0.88로 향상되었습니다.
-
-**💻 핵심 코드**
-```python
-# ai_server/app/services/focuse_service.py
-class FrameMobileNetV2(nn.Module):
-    def __init__(self, num_classes=2):
-        super(FrameMobileNetV2, self).__init__()
-        self.backbone = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
-        num_ftrs = self.backbone.classifier[1].in_features
-        # Dropout을 통한 정규화 + 클래스 불균형 손실 가중치 지원
-        self.backbone.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(num_ftrs, num_classes)
-        )
-
-    def forward(self, x):
-        return self.backbone(x)
-
-# 학습 시 클래스 불균형 반영
-# criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.5]))  
-# → 비집중 클래스에 더 높은 가중치 부여
-```
-
-### 4. 집중도 모델 최적화 - 실시간 처리와 GPU 안정화
-**[Situation]**
-분석 처리량이 많아 GPU OOM과 지연이 발생했습니다.
-
-**[Problem]**
-동시 분석이 과도해 파이프라인이 중단될 위험이 있었습니다.
-
-**[Solution]**
-`asyncio.Semaphore` 기반 동시 작업 제한 (`MAX_CONCURRENT_JOBS=1`), 5프레임 간격 샘플링, `BackgroundTasks` 비동기 큐 시스템을 도입하여 안정화했습니다.
-
-**[Result]**
-GPU OOM 에러가 제거되고, 평균 분석 지연이 40% 감소했습니다.
-
-**💻 핵심 코드**
-```python
-# ai_server/app/services/focuse_service.py
-def analyze_video_to_json(video_path, model, device, debug_dir='test_img', stride=5):
-    # stride=5 → 5프레임 간격으로 샘플링하여 연산량 70% 감소
-    
-    frame_idx = 0
-    with torch.no_grad():
-        while True:
-            ret, frame = cap.read()
-            if not ret: break
-
-            # 5프레임 간격으로만 분석 수행
-            if frame_idx % stride == 0:
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                results = face_detector.process(rgb_frame)
-                
-                if results.detections:
-                    # 모델 추론
-                    crop = transform(Image.fromarray(face_crop)).unsqueeze(0).to(device)
-                    output = model(crop)
-                    # 결과 누적
-            
-            frame_idx += 1
-
-# ai_server/app/api/ai.py
-MAX_CONCURRENT_JOBS = 1
-analysis_semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
-
-async def run_full_analysis(request: AnalysisRequest):
-    # 입장권(세마포어) 대기 - GPU 메모리 안정화
-    async with analysis_semaphore:
-        logger.info(f"🚀 분석 시작 (GPU 안정화됨)")
-        focus_stats = await asyncio.to_thread(
-            analyze_video_to_json,
-            sample_video_path, focus_model, device, 'test_img', 5
-        )
-```
-
-### 5. LLM 요약 안정화 - Hallucination 감소와 구조화 응답 보장
-**[Situation]**
-상담 음성을 STT로 변환한 뒤 LLM으로 요약할 때, 긴 대화를 한 번에 처리하면 문맥이 섞이거나 근거 없는 추천 문장이 섞일 가능성이 있었습니다.
-
-**[Problem]**
-초기에는 긴 텍스트를 chunk별로 병렬 요약한 뒤 다시 합치는 Map-Reduce 방식을 검토했지만, 상담 대화는 시간 순서와 맥락 연결이 중요해 chunk 간 의미가 끊기기 쉬웠습니다. 그 결과 요약 문장이 매끄럽지 않거나, 앞뒤 맥락이 어긋난 해석이 들어갈 위험이 있었습니다.
-
-**[Solution]**
-병렬 Map-Reduce 대신 Refine 방식을 적용해 chunk를 순서대로 누적 요약하도록 바꾸었습니다. 또한 최종 응답은 OpenAI Structured Output(Pydantic 스키마)으로 강제해 `interest_field`, `low_interest_field`, `student_trait`, `career_recommendation`, `summary` 형식을 안정적으로 받도록 설계했습니다. 프롬프트에는 "확인된 근거만 작성", "상담 내용과 영상 분석이 다르면 상담 내용을 우선", "추정이 필요한 경우 `(추정)` 표기" 규칙을 넣어 hallucination을 줄였습니다.
-
-**[Result]**
-장문 상담에서도 요약 흐름이 더 자연스럽게 유지되었고, JSON 파싱 실패나 필드 누락 없이 후속 API와 프론트엔드에서 바로 소비 가능한 응답 구조를 확보했습니다. 특히 추천 진로 생성 시 상담 내용과 영상 분석 결과를 함께 보되, 근거 우선 규칙으로 과도한 추론을 억제할 수 있었습니다.
-
-**💻 핵심 코드**
-```python
-# ai_server/app/services/summary_service.py
-def build_chunks_from_segments(segments, max_chars=2500):
-    chunks = []
-    current_chunk = ""
-
-    for seg in segments:
-        text = clean_text(seg["text"])
-        if len(current_chunk) + len(text) < max_chars:
-            current_chunk += " " + text
-        else:
-            chunks.append(current_chunk.strip())
-            current_chunk = text
-
-    if current_chunk.strip():
-        chunks.append(current_chunk.strip())
-
-    return chunks
-
-def refine_chunks(chunks: list) -> str:
-    accumulated_summary = ""
-
-    for chunk in chunks:
-        accumulated_summary = refine_chunk(accumulated_summary, chunk)
-
-    return accumulated_summary
-
-res = client.beta.chat.completions.parse(
-    model="gpt-4o-mini",
-    messages=[
-        {"role": "system", "content": "...진로 상담 분석 전문 AI..."},
-        {"role": "user", "content": prompt}
-    ],
-    response_format=CounselingResult,
-    max_tokens=800
-)
-
-```
+# 💥Trouble shooting - LLM , 서버배포 
 
 ### 1️⃣ LLM 응답 JSON 구조 불안정 문제
 
@@ -359,6 +218,7 @@ res = client.beta.chat.completions.parse(
 - 프롬프트 방식은 강제성이 부족함
 
 #### 💡 해결 방법
+- 최종 응답은 OpenAI Structured Output(Pydantic 스키마)으로 강제해 `interest_field`, `low_interest_field`, `student_trait`, `career_recommendation`, `summary` 형식을 안정   적으로 받도록 설계
 
 ##### Before (프롬프트 기반)
 ```python
@@ -398,21 +258,23 @@ result = res.choices[0].message.parsed
 #### 📊 효과
 - JSON 구조 100% 보장
 - 파싱 에러 제거
-- 백엔드 처리 로직 단순화
+  
 
 ---
 
 ### 2️⃣ 상담 요약 시 맥락 손실 문제
 
 #### 📌 문제
-- 긴 상담 데이터를 chunk로 나눠 요약 시 맥락이 끊김
-- 최종 요약 결과의 일관성이 떨어짐
+- 초기에는 긴 텍스트를 chunk별로 병렬 요약한 뒤 다시 합치는 Map-Reduce 방식을 검토했지만, 상담 대화는 시간 순서와 맥락 연결이 중요해 chunk 간 의미가 끊기기 쉬웠음.
+- 그 결과 요약 문장이 매끄럽지 않거나, 앞뒤 맥락이 어긋난 해석이 들어갈 위험이 있었음.
+- 최종 요약 결과의 일관성이 떨어짐.
 
 #### 🔍 원인
 - Map-Reduce 방식 사용으로 각 chunk가 독립적으로 처리됨
 - 상담 데이터는 순차적 흐름이 중요한데 반영되지 않음
 
 #### 💡 해결 방법
+-청크별 요약처리를 Map-Reduce 방식에서 하나의 청크요약이 다음 청크요약에서 누적될 수 있도록 Refine 방식으로 개선 
 
 ##### Before (Map-Reduce)
 ```python
@@ -425,9 +287,12 @@ final = llm(" ".join(summaries))
 
 ##### After (Refine 방식)
 ```python
-def refine_chunk(existing_summary, new_chunk):
-    prompt = f"""
-    기존 요약:
+def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
+    if not existing_summary:
+        prompt = f"""
+    당신은 학교 진로 상담 전문 분석가입니다.
+    아래 상담 녹취의 핵심 내용을 구조화된 형식으로 정리하세요.
+    ....
     {existing_summary}
 
     새로운 내용:
@@ -438,8 +303,13 @@ def refine_chunk(existing_summary, new_chunk):
     return llm(prompt)
 
 summary = ""
-for chunk in chunks:
-    summary = refine_chunk(summary, chunk)
+
+def refine_chunks(chunks: list) -> str:
+    accumulated_summary = ""
+
+    for i, chunk in enumerate(chunks):
+        print(f"[Refine] {i+1}/{len(chunks)} 청크 처리 중...")
+        accumulated_summary = refine_chunk(accumulated_summary, chunk)
 ```
 
 #### 📊 효과
@@ -447,7 +317,159 @@ for chunk in chunks:
 - 요약 일관성 향상
 - 분석 품질 개선
 
+### 3️⃣ LLM Hallucination (환각) 문제
 
+#### 📌 문제
+- 상담 내용과 다른 정보가 생성되거나, 근거 없는 내용이 포함되는 현상 발생
+- 영상 분석 결과와 상충되는 진로 추천이 나오는 경우 존재
+- 모델이 확신형 문장으로 잘못된 정보를 생성하여 신뢰도 저하
+
+#### 🔍 원인
+- LLM의 확률 기반 생성 특성으로 인해 실제 데이터에 없는 내용 생성
+- 입력 데이터(상담 요약, 영상 분석) 간 충돌 시 명확한 판단 기준 부재
+- "좋은 답변"을 만들려는 과정에서 과도한 일반화 발생
+
+#### 💡 해결 방법
+
+##### Before (일반 프롬프트)
+```python
+prompt = f"""
+상담 내용을 기반으로 진로를 추천하세요.
+"""
+```
+
+##### After (Hallucination 제어 프롬프트 적용)
+```python
+prompt = f"""
+[분석 원칙]
+- 확인된 근거가 있는 내용만 작성하고, 근거 없이 단정하지 마세요
+- 상담 내용과 영상 분석이 다를 경우 상담 내용을 우선하세요
+- 추정이 필요한 경우 반드시 "(추정)"을 붙이세요
+
+[상담 요약]
+{text}
+
+[영상분석]
+{video_analyze}
+"""
+```
+
+#### 📊 효과
+- 근거 기반 응답 생성으로 신뢰도 향상
+- 데이터 충돌 시 일관된 판단 기준 확보
+- 불필요한 추측 및 허위 정보 생성 감소 (Hallucination 완화)
+
+### 4️⃣ 서버 구조 및 배포 관련 문제
+
+#### 📌 문제
+- AI 모델 추론과 API 요청이 하나의 서버에서 처리되면서 응답 지연 발생
+- 영상 처리 및 모델 추론 시 CPU/GPU 사용량 급증 → 전체 서버 성능 저하
+- 하나의 도메인에서 여러 서버를 운영하기 어려움
+
+#### 🔍 원인
+- Backend(API, DB)와 AI 연산 작업이 동일 서버에서 동작
+- 연산 작업(AI)이 I/O 작업(API 응답)에 영향을 주는 구조
+- 트래픽 분산 및 라우팅 구조 부재
+
+#### 💡 해결 방법
+
+##### Before (단일 서버 구조)
+```
+Client → Backend (API + AI 처리 + DB)
+```
+
+##### After (서버 분리 + Nginx 라우팅)
+```
+Client → Nginx
+            ├ /api → Backend Server
+            └ /ai  → AI Server
+```
+
+- Nginx를 활용하여 URL 기반 라우팅 적용
+- Backend와 AI Server를 물리적으로 분리
+- AI Server는 연산 성능 중심 인스턴스로 구성
+
+#### 📊 효과
+- API 응답 속도 안정화
+- AI 연산과 서비스 로직 분리로 병목 제거
+- 서버 확장성 및 유지보수성 향상
+
+---
+
+### 5️⃣ 서버 간 통신 보안 문제
+
+#### 📌 문제
+- AI Server에 저장된 영상 및 음성 데이터는 민감 정보
+- 외부 네트워크 노출 시 보안 위험 존재
+
+#### 🔍 원인
+- 초기 설계에서 서버 간 통신 보안 고려 부족
+- Public IP 기반 통신 시 외부 접근 가능성 존재
+
+#### 💡 해결 방법
+
+##### Before (외부 노출 가능 구조)
+```
+Backend ↔ AI Server (Public IP)
+```
+
+##### After (Private IP 내부 통신)
+```
+Backend ↔ AI Server (Private IP)
+```
+
+- 동일 VPC 내 Private IP 기반 통신 적용
+- 외부에서 AI Server 직접 접근 차단
+
+#### 📊 효과
+- 민감 데이터 외부 노출 방지
+- 내부 네트워크 기반 안정적인 통신 확보
+- 보안 수준 향상
+
+---
+
+### 6️⃣ 로그 관리 및 서버 운영 문제
+
+#### 📌 문제
+- 에러 발생 시 원인 추적이 어려움
+- 로그가 누적되면서 서버 용량 및 성능 저하 발생
+
+#### 🔍 원인
+- 로그 관리 정책 부재
+- 로그 파일 무제한 누적
+
+#### 💡 해결 방법
+환경변수에 로그파일 관리설정과 TimeRotatingFileHandler 적용하여 관리 
+
+
+#####  (파일 기반 로그 + 자동 관리)
+```python
+handler = TimedRotatingFileHandler(
+    filename=os.path.join(LOG_DIR_NAME, BACKEND_LOG_FILE),
+    when=os.getenv("LOG_ROTATION_WHEN", "midnight"),
+    interval=int(os.getenv("LOG_ROTATION_INTERVAL", 1)),
+    backupCount=int(os.getenv("LOG_BACKUP_COUNT", 30)),
+    encoding="utf-8"
+)
+
+```
+(env)
+<img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/3940f50d-8942-4da0-b2f9-1aaacc5d2a44" />
+
+```bash
+/app/logs/app.log
+/app/logs/app_2026-04-01.log
+/app/logs/app_2026-04-02.log
+```
+
+- 날짜 기준 로그 파일 자동 분리
+- 일정 기간 이후 로그 자동 삭제 (log rotation)
+- 에러 발생 시 시점별 추적 가능
+
+#### 📊 효과
+- 문제 발생 시 빠른 원인 분석 가능
+- 서버 디스크 사용량 안정화
+- 운영 안정성 향상
 ## 🗂 Database Design (ERD)
 
 <p align = "center">
