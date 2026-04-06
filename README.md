@@ -10,21 +10,27 @@
 ---
 ## 📌 Introduction (KOREA IT ACADEMY 최종 프로젝트)
 
-**너, 내 진로가 되라**는 학생의 감정, 집중도, 설문조사 데이터와 상담 대화를 분석하여 진로 리포트를 자동 생성하는 AI 기반 진로 상담 플랫폼입니다.
+**너, 내 진로가 되라** 웹캠으로 학생의 집중도와 흥미도를 분석하고, 상담 내용을 STT로 변환하여 LLM으로 요약 및 진로 추천까지 제공하는 AI 기반 진로 상담 플랫폼입니다. AI 기반 진로 상담 및 분석 서비스 '진로이즈백'은 기존 진로 상담의 한계를 극복하기 위해 개발되었습니다.
 
-전통적인 진로 상담은 학생의 말과 상담사의 메모에 크게 의존합니다. 하지만 실제 현장에서는 학생이 어떤 주제에 더 몰입했는지, 상담 내용이 어떤 맥락으로 흘렀는지를 한 번에 구조화하기 어렵습니다.
+## 기존 진로 상담의 한계점 
 
-최근 AI 기술의 발전으로 비디오/오디오 분석이 가능해졌으나, 이를 상담 프로세스에 통합한 서비스는 부족합니다.
+### 1️⃣ 상담사의 경험 의존성 
+- 상담사의 경험에 의존하여 학생의 실제 관심도와 집중도를 파악하기 어렵다.
+### 2️⃣ 비언어적 표현의 부족한 기록 
+- 말로 진행되는 상담 특성상 학생의 비언어적 표현이 많이 기록되지 않거나 집중되지 않는다.
+### 3️⃣ 제한된 시간과 부족한 구조화된 자료 
+- 제한된 시간 내에 상담이 이루어져 활용 가능한 구조화된 자료가 부족하다.
+### 4️⃣ 정보 과부하로 인한 학생의 혼란 
+- 직업 정보가 많아지면서 학생 스스로 무엇을 좋아하고 잘하는지 판단하기 어렵다.
+### 5️⃣ 주관적인 상담 진행 
+- 상담사의 경험에 기반하여 객관적인 근거보다는 주관적인 생각이 개입될 수 있다.
 
-이에 학생의 시선 데이터, 설문 응답, 상담 대화를 함께 분석하여 상담사의 판단을 보조하는 플랫폼을 구축하는 것을 목표로 기획되었습니다.
+## 목표 
+- 실시간 웹캠 기반으로 학생의 몰입도, 흥미도, 집중도를 점수화.
+- 자가 설문 조사 결과를 점수화하여 통합.
+- 상담 내용을 녹음하여 STT(Speech-to-Text)로 변환하고 LLM(Large Language Model)으로 요약 및 진로 추천까지 제공
+- 정량/정성 데이터를 결합한 리포트 자동 생성.
 
-본 프로젝트는 AI 기술을 활용하여
-
-- 실시간 웹캠 분석으로 집중도/흥미도 측정
-- 음성 STT 및 LLM 요약으로 상담 내용 구조화
-- 정량/정성 데이터를 결합한 리포트 자동 생성
-
-하는 것을 목표로 개발되었습니다.
 
 ---
 ## 📊 Project Overview
@@ -57,11 +63,25 @@
 - ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 - ![Redux](https://img.shields.io/badge/Redux-764ABC?style=flat-square&logo=redux&logoColor=white)
 
-### AI/ML
-- ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
-- ![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=flat-square&logo=opencv&logoColor=white)
-- ![MediaPipe](https://img.shields.io/badge/MediaPipe-00A1F1?style=flat-square&logo=google&logoColor=white)
-- ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white)
+### 🧠 AI Pipeline & Models
+
+- **STT**
+   ![Whisper](https://img.shields.io/badge/Faster--Whisper-FF6F00?style=flat-square&logo=openai&logoColor=white) :Speech-to-Text
+
+- **집중도 분석**
+   ![MobileNetV2](https://img.shields.io/badge/MobileNetV2-0A66C2?style=flat-square&logo=pytorch&logoColor=white): Frame 단위 집중/비집중 분류
+
+- **흥미도 분석**
+   ![ResNet50](https://img.shields.io/badge/ResNet50-8A2BE2?style=flat-square&logo=pytorch&logoColor=white) :표정/감정 분류
+
+- **시선 추적**
+   ![MediaPipe](https://img.shields.io/badge/MediaPipe-FaceMesh-00A1F1?style=flat-square&logo=google&logoColor=white) :정면 응시 판단
+
+- **추가 실험 모델**
+   ![Swin Transformer](https://img.shields.io/badge/Swin%20Transformer-FF1493?style=flat-square&logo=pytorch&logoColor=white) :성능 비교 및 개선 실험
+
+- **LLM**
+   ![GPT-4o-mini](https://img.shields.io/badge/GPT--4o--mini-412991?style=flat-square&logo=openai&logoColor=white) :상담 요약 및 진로 추천
 
 ### Deployment
 - ![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat-square&logo=amazonec2&logoColor=white)
@@ -70,22 +90,99 @@
 ### Collaboration
 - ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white) / ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)
 ---
-## 🔑 담당 구현 기능
+## ⚡ 주요 기능
 
-### 1️⃣ 학생 진단 플로우
-- 카테고리별 진로 영상 선택 및 시청
-- 웹캠 녹화 및 실시간 분석
-- 영상별 설문 응답 저장
+---
 
-### 2️⃣ AI 분석 파이프라인
-- 집중도/흥미도 분석 (MediaPipe + PyTorch)
-- 음성 STT (Faster-Whisper)
-- 상담 요약 및 추천 진로 생성 (OpenAI API)
+### 1️⃣ 영상 선택 및 시청 (내담자측) 
 
-### 3️⃣ 상담사 업무 지원
-- 학생 관리 및 일정 배정
-- AI 분석 결과 확인
-- 최종 리포트 작성 및 PDF 내보내기
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/7c0ce337-c2f2-4792-9e81-e8ceb9c57fc1" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/6b5df915-8944-4ab0-84c7-d0d1c39e5b13" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+  </tr>
+</table>
+
+- 대분류, 중분류, 소분류로 나뉜 카테고리에서 영상을 선택하여 시청.
+- 영상 시청 시작과 동시에 웹캠 녹화를 시작하며 시선과 표정을 분석.
+
+---
+
+### 2️⃣ 설문조사 (내담자측)
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/06deec85-9797-406a-a215-7935736d5fb7" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/b244afdb-840d-4bee-a4f0-72b2d23b568d"  width=400 height="250" style="object-fit: contain;"/>
+    </td>
+  </tr>
+</table>
+
+- 영상 시청 녹화가 끝나면 설문 조사로 넘어가 사용자의 주관적인 데이터를 수집.
+- 완료시 웹켐영상은 AI서버에 내담자별 video파일에 저장되고 설문조사 내역은 DB에 JSON 형태로 저장.  
+
+---
+
+### 3️⃣ 일정관리 및 학생목록 (상담사측)
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/93c05ab8-fe7f-4c9d-87b1-a083160c39e0"  width=400 height="250" style="object-fit: contain;"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/b85545a8-af91-43a7-bf98-771aa0173ebb"  width=400 height="250" style="object-fit: contain;"/>
+    </td>
+  </tr>
+</table>
+
+- 영상3개를 다본 내담자의 데이터가 상담사쪽으로 넘어옴.
+- 상담사가 내담자의 상담일정을 잡은 후 그 목록을 학생목록에서 볼 수 있음. 
+
+---
+
+### 5️⃣ 📚 AI 결과 분석 & 상담녹음 
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/5ae67959-8ef2-41cb-b4a7-0aac3dd0cf56" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/f1ce087e-af81-45f5-ac4f-0e3258df9ea6" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+  </tr>
+</table>
+
+- 웹캠 영상 분석을 통해 사용자의 시선과 집중도를 시각화한 그래프를 제공.
+- 집중도, 흥미도, 주관적인 의견을 포함한 최종 점수표를 제공.
+- 상담 중 녹음을 시작하고, 종료 시 STT로 텍스트 변환 후 LLM으로 넘겨 학생 성향 분석 및 진로 추천을 도출.
+
+---
+
+### 6️⃣ 최종리포트 작성 & PDF출력
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/dce633c8-b075-4c49-9cfc-b8611572c843" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/4d8a2708-6dd5-44c4-ad6e-f458e04edd61" width=400 height="250" style="object-fit: contain;"/>
+    </td>
+  </tr>
+</table>
+
+- AI 분석 결과를 기반으로 상담사가 주관적인 내용을 추가하여 수정 및 저장.
+- 최종 작성 완료 시 수정이 불가능하며, PDF 또는 텍스트 파일로 추출하여 학생에게 전달가능.
+
 
 ## 🤖 AI 개발
 
@@ -279,94 +376,78 @@ res = client.beta.chat.completions.parse(
 ## 🎥 데모 영상
 
 - 프로젝트 발표 영상 : [발표 영상](https://www.youtube.com/watch?v=iKnmn_Ps-NU&list=PLedGoSru7949ULhxrVcR86nPq25uXOu1Q&index=2)
-- 프로젝트 Q&A 영상 : [Q&A](https://www.youtube.com/watch?v=DbGTcnBE4lo&list=PLedGoSru7949ULhxrVcR86nPq25uXOu1Q&index=3)
-- 발표 자료: [발표 ppt](https://github.com/MUNJI-KANG/Jinro_Proj_Portfolio/blob/main/Presentation/%EC%B5%9C%EC%A2%85%EB%B0%9C%ED%91%9C_jinro2.pptx)
+- 프로젝트 화면 영상 : [화면 영상](https://www.youtube.com/watch?v=Ni0QDxmP0FU&list=PLedGoSru7949ULhxrVcR86nPq25uXOu1Q&index=3)
 ---
 
 
 
-## 설치 및 실행 방법
+## 🚀 로컬 실행 방법
 
-### 1. 저장소 이동
+이 프로젝트는 `frontend`, `backend`, `ai_server` 3개 프로세스로 실행됩니다.  
+Git에는 `.venv`와 `.env`가 포함되지 않으므로, 다른 PC에서 처음 실행할 때는 아래 준비가 필요합니다.
 
-```bash
-cd JINRO_IS_BACK/JINRO_PROJ
+### 1. 사전 준비
+
+- Python 3.12
+- Node.js
+- MySQL
+- `JINRO_PROJ/backend/.env`
+- `JINRO_PROJ/ai_server/.env`
+
+`.env` 파일은 각 폴더의 `.env.example`을 복사해서 작성할 수 있습니다.
+
+```powershell
+Copy-Item JINRO_PROJ\backend\.env.example JINRO_PROJ\backend\.env
+Copy-Item JINRO_PROJ\ai_server\.env.example JINRO_PROJ\ai_server\.env
 ```
 
-### 2. Frontend 실행
+### 2. 최초 1회 설치
 
-```bash
-cd frontend
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r JINRO_PROJ\backend\requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r JINRO_PROJ\ai_server\requirements.txt
+cd JINRO_PROJ\frontend
 npm install
+```
+
+### 3. 실행
+
+가장 쉬운 방법은 프로젝트 루트에서 아래 파일을 실행하는 것입니다.
+
+```bat
+run_local.bat
+```
+
+수동 실행이 필요하면 터미널 3개에서 각각 실행합니다.
+
+```powershell
+cd f:\Portfolio\JINRO_AI_PORTFOLIO\JINRO_PROJ\backend
+..\..\.venv\Scripts\python.exe run.py
+```
+
+```powershell
+cd f:\Portfolio\JINRO_AI_PORTFOLIO\JINRO_PROJ\ai_server
+..\..\.venv\Scripts\python.exe run.py
+```
+
+```powershell
+cd f:\Portfolio\JINRO_AI_PORTFOLIO\JINRO_PROJ\frontend
 npm run dev
 ```
 
-- 기본 개발 서버: `http://127.0.0.1:5173`
+### 4. 접속 주소
 
-### 3. Backend 실행
+실행 후 접속 주소는 아래와 같습니다.
 
-```bash
-cd backend
-pip install -r requirements.txt
-python run.py
-```
+- Frontend: `http://localhost:5173`
+- Backend: `http://127.0.0.1:8000`
+- AI Server: `http://127.0.0.1:8001`
 
-- 기본 서버: `http://127.0.0.1:8000`
+### 5. 참고 사항
 
-### 4. AI Server 실행
-
-```bash
-cd ai_server
-pip install -r requirements.txt
-python run.py
-```
-
-- 기본 서버: `http://127.0.0.1:8001`
-
-## 환경변수
-
-### Backend `.env`
-
-아래 값들이 필요합니다.
-
-```env
-DB_USERNAME=
-DB_PASSWORD=
-DB_HOST=
-DB_PORT=
-DB_NAME=
-
-BACKEND_URL=http://127.0.0.1:8000
-AI_SERVER_URL=http://127.0.0.1:8001
-FRONTEND_URL=http://127.0.0.1:5173
-SESSION_SECRET_KEY=
-
-LOG_DIR=logs
-BACKEND_LOG_FILE=backend_error.log
-LOG_LEVEL=ERROR
-LOG_ROTATION_WHEN=midnight
-LOG_ROTATION_INTERVAL=1
-LOG_BACKUP_COUNT=30
-```
-
-### AI Server `.env`
-
-```env
-BACKEND_URL=http://127.0.0.1:8000
-OPENAI_API_KEY=
-
-UPLOAD_DIR=uploads
-LOG_DIR=logs
-AI_LOG_FILE=ai_debug.log
-LOG_LEVEL=INFO
-LOG_ROTATION_WHEN=midnight
-LOG_ROTATION_INTERVAL=1
-LOG_BACKUP_COUNT=30
-```
-## Closing
-
-`너, 내 진로가 되라`는 단순히 AI 기능을 덧붙인 데모가 아니라, 학생 진단 데이터, 상담 대화, 비디오 분석 결과를 하나의 상담 리포트로 연결하는 end-to-end 진로 상담 시스템입니다.
-
-이 프로젝트에서 저는 FastAPI 기반 백엔드 구조화, AI 추론 서버 분리, 음성 STT 및 영상 분석 파이프라인 연동, 프론트엔드 사용자 흐름 설계, 결과 리포트 자동화까지 제품 관점에서 전체 흐름을 연결했습니다.
-
-특히 모델 성능 자체만이 아니라, AI가 실제 서비스 안에서 어떤 입력을 받고 어떤 형태의 결과로 소비되어야 하는지까지 설계하고 구현했다는 점을 이 포트폴리오의 핵심 가치로 두고 있습니다.
+- Python 가상환경은 프로젝트 루트의 `.venv`를 사용합니다.
+- 데이터베이스 연결 정보는 `JINRO_PROJ/backend/.env`에 설정해야 합니다.
+- AI 요약 및 분석 관련 설정은 `JINRO_PROJ/ai_server/.env`에 설정해야 합니다.
+- LLM 기반 상담 요약을 사용하려면 `JINRO_PROJ/ai_server/.env`에 `OPENAI_API_KEY`를 설정해야 합니다.
+- AI 모델 파일이 없으면 서버는 실행되지만 일부 분석 기능은 제한될 수 있습니다.
