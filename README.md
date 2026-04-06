@@ -453,7 +453,6 @@ handler = TimedRotatingFileHandler(
 )
 
 ```
-(env)
 <img width="500" height="400" alt="image" src="https://github.com/user-attachments/assets/3940f50d-8942-4da0-b2f9-1aaacc5d2a44" />
 
 ```bash
