@@ -186,50 +186,26 @@
 
 ## 🤖 AI 개발
 
-AI 서버는 영상/오디오 데이터를 직접 받아서 분석하는 파이프라인을 구성하고, 결과를 백엔드로 전달해 상담 리포트에 즉시 반영합니다. 이 섹션은 실제 구현한 코드의 동작과 성능을 간결하게 정리한 내용입니다.
-
 ### 1) 모델 기반 영상 분석
-- 웹캠 영상은 업로드된 파일을 5프레임 간격으로 샘플링하여 처리하고, 얼굴 탐지 및 표정 정보를 기반으로 흥미도를 예측합니다.
-- 흥미도 모델(ResNet50 기반)은 사전 저장된 `interest_classifier_best.pth` 가중치를 불러와서 추론합니다.
-- 집중도 모델은 MobileNetV2 변형(`FrameMobileNetV2`)으로 각 프레임에서 집중/비집중을 분류하고, 최종 집중도 점수를 계산합니다.
-- 프레임 분석 결과는 `interest`(흥미도)와 `focused`(집중도)로 정리되어 후속 로직으로 전달됩니다.
+- 웹캠 영상은 업로드된 파일을 5프레임 간격으로 샘플링하여 처리하고, 얼굴 탐지 및 표정 정보를 기반으로 흥미도를 예측.
+- 흥미도 모델(ResNet50 기반)은 사전 저장된 `interest_classifier_best.pth` 가중치를 불러와서 추론.
+- 집중도 모델은 MobileNetV2 변형(`FrameMobileNetV2`)으로 각 프레임에서 집중/비집중을 분류하고, 최종 집중도 점수를 계산.
+- 프레임 분석 결과는 `interest`(흥미도)와 `focused`(집중도)로 정리되어 후속 로직으로 전달.
 
 ### 2) 음성 STT + LLM 요약
-- 상담 음성은 `faster-whisper` 기반 STT로 텍스트화합니다.
-- STT 결과는 segment 단위로 분리한 뒤 filler를 정리하고, chunk 단위로 나눈 후 Refine 방식으로 순차 요약합니다.
-- 요약 단계에는 `gpt-4o-mini`를 사용하며, 긴 상담 내용을 한 번에 보내지 않고 누적 요약을 갱신하는 방식으로 맥락 손실을 줄였습니다.
-- 최종 단계에서는 상담 요약과 영상 분석 결과를 함께 입력해 `interest_field`, `low_interest_field`, `student_trait`, `career_recommendation`, `summary` 구조의 결과를 생성합니다.
-- 이 과정은 OpenAI Structured Output(Pydantic 스키마 기반)을 적용해 JSON 파싱 실패 가능성을 줄이고, 프론트엔드/백엔드에서 바로 소비 가능한 응답 형식을 보장합니다.
-- 별도로 `/api/summarize` 엔드포인트를 두어 Ollama 기반 장문 구조화 요약도 지원할 수 있게 구성했습니다.
-- 이 과정은 오디오 업로드 엔드포인트에서 자동 실행되며, 결과는 백엔드 API로 저장됩니다.
+- 상담 음성은 `faster-whisper` 기반 STT로 텍스트화.
+- STT 결과는 segment 단위로 분리한 뒤 filler를 정리하고, chunk 단위로 나눈 후 Refine 방식으로 순차 요약.
+- 요약 단계에는 `gpt-4o-mini`를 사용하며, 긴 상담 내용을 한 번에 보내지 않고 누적 요약을 갱신하는 방식사용.
+- 최종 단계에서는 상담 요약과 영상 분석 결과를 함께 입력해 `interest_field`, `low_interest_field`, `student_trait`, `career_recommendation`, `summary` 구조의 결과를 생성.
 
 
-
-### 4) 상담 점수화 로직 (현 실무 반영)
-- 백엔드 점수 계산은 감정 25%, 집중도 35%, 설문 40% 가중치를 사용합니다.
-- 설문점수는 1~5번 응답을 0~100점 스케일로 정규화해 반영합니다.
-- 집중도 40 미만인 경우 `is_reliable=False`로 상태를 표시해 재분석/검증 플로우를 지원합니다.
+### 3) 상담 점수화 로직 
+- 백엔드 점수 계산은 감정 25%, 집중도 35%, 설문 40% 가중치를 사용.
+- 설문점수는 1~5번 응답을 0~100점 스케일로 정규화해 반영.
+- 집중도 40 미만인 경우 `is_reliable=False`로 상태를 표시해 재분석/검증 플로우를 지원.
 
 ---
-## 🗂 Database Design (ERD)
-
-<p align = "center">
-  <img width="1412" height="849" alt="image" src="https://github.com/user-attachments/assets/2c306620-478d-407c-95e1-f83a2d695b6c" />
-</p>
-
----
-
-## 🧩 주요 Module 구조
-
-| Module | 역할 |
-|--------|------|
-| frontend | React 기반 UI/UX, Redux 상태 관리 |
-| backend | FastAPI 기반 API, 세션/리포트 관리 |
-| ai_server | AI 모델 서빙, 비디오/오디오 분석 |
-| database | MySQL 스키마 및 ORM |
-
----
-## ⚠️ Trouble Shooting & Technical Highlights
+# 💥Trouble shooting 
 
 
 ### 3. 집중도 모델 개선 - 데이터 불균형 대응
@@ -369,8 +345,114 @@ res = client.beta.chat.completions.parse(
     response_format=CounselingResult,
     max_tokens=800
 )
+
 ```
 
+### 1️⃣ LLM 응답 JSON 구조 불안정 문제
+
+#### 📌 문제
+- 프롬프트로 JSON 형식을 지정했으나 출력이 일관되지 않음
+- key 누락, 타입 불일치 등으로 파싱 에러 발생
+
+#### 🔍 원인
+- LLM은 자연어 생성 기반이라 형식을 100% 보장하지 못함
+- 프롬프트 방식은 강제성이 부족함
+
+#### 💡 해결 방법
+
+##### Before (프롬프트 기반)
+```python
+prompt = """
+다음 JSON 형식으로 출력하세요:
+{
+  "interest_field": "...",
+  "low_interest_field": "...",
+  "student_trait": "...",
+  "career_recommendation": [],
+  "summary": "..."
+}
+"""
+res = client.chat.completions.create(...)
+```
+
+##### After (Pydantic Structured Output)
+```python
+from pydantic import BaseModel
+
+class CounselingResult(BaseModel):
+    interest_field: str
+    low_interest_field: str
+    student_trait: str
+    career_recommendation: list[str]
+    summary: str
+
+res = client.beta.chat.completions.parse(
+    model="gpt-4o-mini",
+    messages=[...],
+    response_format=CounselingResult
+)
+
+result = res.choices[0].message.parsed
+```
+
+#### 📊 효과
+- JSON 구조 100% 보장
+- 파싱 에러 제거
+- 백엔드 처리 로직 단순화
+
+---
+
+### 2️⃣ 상담 요약 시 맥락 손실 문제
+
+#### 📌 문제
+- 긴 상담 데이터를 chunk로 나눠 요약 시 맥락이 끊김
+- 최종 요약 결과의 일관성이 떨어짐
+
+#### 🔍 원인
+- Map-Reduce 방식 사용으로 각 chunk가 독립적으로 처리됨
+- 상담 데이터는 순차적 흐름이 중요한데 반영되지 않음
+
+#### 💡 해결 방법
+
+##### Before (Map-Reduce)
+```python
+def summarize_chunk(chunk):
+    return llm(chunk)
+
+summaries = [summarize_chunk(c) for c in chunks]
+final = llm(" ".join(summaries))
+```
+
+##### After (Refine 방식)
+```python
+def refine_chunk(existing_summary, new_chunk):
+    prompt = f"""
+    기존 요약:
+    {existing_summary}
+
+    새로운 내용:
+    {new_chunk}
+
+    기존 내용을 유지하며 요약을 갱신하세요.
+    """
+    return llm(prompt)
+
+summary = ""
+for chunk in chunks:
+    summary = refine_chunk(summary, chunk)
+```
+
+#### 📊 효과
+- 상담 흐름 유지 (맥락 보존)
+- 요약 일관성 향상
+- 분석 품질 개선
+
+
+## 🗂 Database Design (ERD)
+
+<p align = "center">
+  <img width="1412" height="849" alt="image" src="https://github.com/user-attachments/assets/2c306620-478d-407c-95e1-f83a2d695b6c" />
+</p>
 ---
 
 ## 🎥 데모 영상
