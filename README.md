@@ -204,7 +204,7 @@
 - 설문점수는 1~5번 응답을 0~100점 스케일로 정규화해 반영.
 - 집중도 40 미만인 경우 `is_reliable=False`로 상태를 표시해 재분석/검증 플로우를 지원.
 
-### 적용 기술 스택
+### 4) 적용 기술 스택
 - PyTorch, torchvision, OpenCV, MediaPipe
 - faster-whisper, OpenAI API, Ollama
 - FastAPI, SQLAlchemy, MySQL
