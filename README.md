@@ -204,6 +204,12 @@
 - 설문점수는 1~5번 응답을 0~100점 스케일로 정규화해 반영.
 - 집중도 40 미만인 경우 `is_reliable=False`로 상태를 표시해 재분석/검증 플로우를 지원.
 
+### 적용 기술 스택
+- PyTorch, torchvision, OpenCV, MediaPipe
+- faster-whisper, OpenAI API, Ollama
+- FastAPI, SQLAlchemy, MySQL
+- AWS EC2
+
 ---
 # 💥Trouble shooting - LLM , 서버배포 
 
@@ -478,6 +484,11 @@ handler = TimedRotatingFileHandler(
 - 프로젝트 발표 영상 : [발표 영상](https://www.youtube.com/watch?v=iKnmn_Ps-NU&list=PLedGoSru7949ULhxrVcR86nPq25uXOu1Q&index=2)
 - 프로젝트 화면 영상 : [화면 영상](https://www.youtube.com/watch?v=Ni0QDxmP0FU&list=PLedGoSru7949ULhxrVcR86nPq25uXOu1Q&index=3)
 ---
+
+
+## ‼ 배운점
+- 처음으로 AWS 배포를 담당하며 Backend와 AI Server를 분리 구성하였는데 AI 고연산 특성상 고비용 인스턴스를 선택했음에도 통신 지연 문제를 겪었습니다. 이 과정에서 AI 기능을 실서비스에 올리려면 서버 비용과 성능 사이의 트레이드오프를 현실적으로 고려해야 한다는 점을 배웠습니다. 또한 LLM 파이프라인 설계에서는 Hallucination 제어, 응답 형식 안정화 등 프롬프트만으로는 부족하고 별도의 제어 장치가 필수적이라는 점도 배웠습니다.
+
 
 
 
