@@ -325,7 +325,7 @@ async def run_full_analysis(request: AnalysisRequest):
 - 최종 응답은 OpenAI Structured Output(Pydantic 스키마)으로 강제해 `interest_field`, `low_interest_field`, `student_trait`, `career_recommendation`, `summary` 형식을 안정적으로 받도록 설계
 - 프롬프트에는 "확인된 근거만 작성", "상담 내용과 영상 분석이 다르면 상담 내용을 우선", "추정이 필요한 경우 `(추정)` 표기" 규칙을 넣어 hallucination을 보완
 
-### 스키마 강제
+#### 스키마 강제
 ```python
 class CounselingResult(BaseModel): #  Pydantic 스키마로 출력 구조를 강제
     interest_field: str
@@ -400,7 +400,7 @@ prompt = f"""
 
 #### 💡 해결 방법
 
-##### (서버 분리 + Nginx 라우팅)
+##### 서버 분리 + Nginx 라우팅
 ```
 Client → Nginx
             ├ /api → Backend Server
