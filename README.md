@@ -244,7 +244,7 @@ class FrameMobileNetV2(nn.Module):
         return self.backbone(x)
 
 # 학습 시 클래스 불균형 반영
-# criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.5]))  
+criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.5]))  
 # → 비집중 클래스에 더 높은 가중치 부여
 ```
 
