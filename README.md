@@ -321,7 +321,7 @@ async def run_full_analysis(request: AnalysisRequest):
 
 
 #### 💡 해결 방법
-- 병렬 Map-Reduce 대신 Refine 방식을 적용해 chunk를 순서대로 누적 요약하도록 변경
+- 병렬 Map-Reduce 과 Refine 방식을 결합해 요약된 chunk를 다음 chunk로 순서대로 누적 요약하도록 변경
 - 최종 응답은 OpenAI Structured Output(Pydantic 스키마)으로 강제해 `interest_field`, `low_interest_field`, `student_trait`, `career_recommendation`, `summary` 형식을 안정적으로 받도록 설계
 - 프롬프트에는 "확인된 근거만 작성", "상담 내용과 영상 분석이 다르면 상담 내용을 우선", "추정이 필요한 경우 `(추정)` 표기" 규칙을 넣어 hallucination을 보완
 
@@ -342,7 +342,7 @@ res = client.beta.chat.completions.parse(
 result = res.choices[0].message.parsed
 ```
  
-#### 요약 방식 전환 — Map-Reduce → Refine 방식
+#### 요약 방식 전환 — Map-Reduce → Map-Reduce + Refine 방식
 ```python
 def refine_chunk(existing_summary: str, new_chunk: str) -> str:
     prompt = f"""
@@ -380,7 +380,7 @@ prompt = f"""
 ```
 
 #### 📊 효과
-- 장문 상담에서도 요약 흐름이 더 자연스럽게 유지
+- 장문 상담 요약에도 문맥 일관성과 답변속도 개선
 - JSON 파싱 실패나 필드 누락 없이 후속 API와 프론트엔드에서 바로 소비 가능한 응답 구조를 확보
 - 추천 진로 생성 시 상담 내용과 영상 분석 결과를 근거 우선 규칙으로 과도한 추론을 억제
 
